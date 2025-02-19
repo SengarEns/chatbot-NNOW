@@ -65,8 +65,10 @@ const ChatBot = () => {
   const [orderDetails, setOrderDetails] = useState([]);
   const [return_reasonId, setReturn_reasonId] = useState([]);
   // const [itemsDetails, setItemsDetails
+  const [raiseTicketBy, setRaiseTicketBy] = useState("");
   const [orderItemsDetails, setOrderItemsDetails] = useState([]);
-  const [imageUpload, setImageUpload] = useState("");
+  const [imageUploadUrl, setImageUploadUrl] = useState("");
+  const [imageUploadFile, setImageUploadFile] = useState("");
   const RaiseTicket = () => {};
 
   const Dropdown = () => {
@@ -84,6 +86,27 @@ const ChatBot = () => {
     );
   };
   // const [selectedOrder, setSelectedOrder] = useState("");
+  console.log("raiseTicketBy => ", raiseTicketBy);
+  const [userDetails, setUserDetails] = useState("");
+  function getDecodedToken(token) {
+    // const token = localStorage.getItem("accessToken");
+
+    if (!token) {
+      console.error("No accessToken found in local storage.");
+      return null;
+    }
+
+    try {
+      const payloadBase64 = token.split(".")[1];
+      const decodedPayload = JSON.parse(atob(payloadBase64));
+      setUserDetails(decodedPayload);
+      return decodedPayload;
+    } catch (error) {
+      console.error("Error decoding token:", error);
+      return null;
+    }
+  }
+  console.log("userDetails", userDetails);
 
   const FLOW_CONFIG = {
     main_flow: {
@@ -114,12 +137,7 @@ const ChatBot = () => {
       },
       with_picture: {},
       without_picture: {},
-      // with_picture:{
-      //   message:<div>
-      //     <input type="file" accept="image/png, image/jpeg" />
-      //   </div>
-      // },
-      without_picture: {},
+
       // ----------------------------------------------------------------
       login: {
         message:
@@ -167,6 +185,7 @@ const ChatBot = () => {
         ],
       },
       product_related: {},
+      // push_the_raised_ticket_to_backend: {},
       pin_code_serviceability: {
         message: "Check the availability of delivery at a particular pincode",
       },
@@ -324,8 +343,8 @@ const ChatBot = () => {
         ],
       },
       raise_a_ticket_money_deducted_order_not_confirmed: {},
-      switching_from_COD_to_prepaid: {},
-      message_switching_from_COD_to_prepaid: {
+      // switching_from_COD_to_prepaid: { },
+      switching_from_COD_to_prepaid: {
         message:
           "If you wish to switch from postpaid to prepaid delivery. please raise a ticket. and we will initiate the payment process for you.",
         options: [
@@ -335,6 +354,7 @@ const ChatBot = () => {
           },
         ],
       },
+      raise_a_ticket_switching_from_COD_to_prepaid:{},
       particular_payment_method_not_accepted: {
         message:
           "We accept all regulated payment methods, including UPI, cards, internet banking, and wallets. If a particular payment method isn't working. it could be due to a server issue. Please try again after some time.",
@@ -353,6 +373,7 @@ const ChatBot = () => {
           },
         ],
       },
+      raise_a_ticket_coupon_not_applicable:{},
 
       // --------------- Policy related ----------------
       policy_related: {
@@ -533,17 +554,73 @@ const ChatBot = () => {
   //   setMessages((prev) => [...prev, ...newMessages]);
   // };
 
-  console.log("isOrderLoading", isOrderLoading);
+  const handleImageChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setImageUploadFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImageUploadUrl(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const onImageSubmitHandler = () => {
-    
-  }
+    if (imageUploadUrl) {
+      console.log("Image submitted:", imageUploadUrl);
+      // Add API call or further processing here
+    }
+  };
+
+  const RaiseTicketByFinder = (text) => {
+    return text
+      .replace(/^raise_a_ticket_/, "") // Remove "raise_a_ticket_" prefix
+      .replace(/_/g, " ") // Replace underscores with spaces
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+  useEffect(() => {
+    if (imageUploadUrl) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "user",
+          text: (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "16px",
+                position: "relative",
+              }}
+            >
+              <img
+                src={imageUploadUrl}
+                alt="Uploaded"
+                style={{
+                  width: "100%",
+                  objectFit: "cover",
+                  borderRadius: "8px",
+                }}
+              />
+            </div>
+          ),
+        },
+        {
+          sender: "bot",
+          text: "Image selected. Now enter your concern in the text box.",
+        },
+      ]);
+      setCurrentState("push_the_raised_ticket_to_backend");
+    }
+  }, [imageUploadUrl]);
 
   const handleStateTransition = (nextState) => {
     const stateConfig = FLOW_CONFIG.main_flow[nextState];
     if (!stateConfig) return;
 
     setCurrentState(nextState);
-
     console.log(
       "nextState12",
       stateConfig.message ? stateConfig.message : "NULL"
@@ -595,7 +672,6 @@ const ChatBot = () => {
         ]);
         return false;
       }
-
       setMobileNumber(number);
       return true;
     } catch (error) {
@@ -638,6 +714,7 @@ const ChatBot = () => {
         ]);
         handleStateTransition("greeting");
         setToken(result.data.access_token);
+        getDecodedToken(result.data.access_token);
         setBotResponseLoading(false);
       } else {
         setMessages((prev) => [
@@ -759,7 +836,7 @@ const ChatBot = () => {
   };
   // console.log()
   useEffect(() => {
-    console.log("token", token);
+    // console.log("token", token);
     if (
       (currentState === "order_issues" && token) ||
       (currentState === "switching_from_COD_to_prepaid" && token)
@@ -812,8 +889,12 @@ const ChatBot = () => {
         },
       ]);
     } else if (
-      currentState === "raise_a_ticket_money_deducted_order_not_confirmed"
+      currentState === "raise_a_ticket_money_deducted_order_not_confirmed" ||
+      currentState === "raise_a_ticket_switching_from_COD_to_prepaid" ||
+      currentState === "raise_a_ticket_coupon_not_applicable"
     ) {
+     console.log("raise_a_ticket_switching_from_COD_to_prepaid");
+      setRaiseTicketBy(RaiseTicketByFinder(currentState));
       handleStateTransition("choose_image_options");
     } else if (currentState === "with_picture") {
       setMessages((prev) => [
@@ -826,39 +907,101 @@ const ChatBot = () => {
         {
           sender: "bot",
           text: (
-            <div>
-
-              <img src={imageUpload} />
-              <input type="file" accept="image/png, image/jpeg" onChange={setImageUpload} />
-              <button onClick={onImageSubmitHandler}>submit</button>
-              <svg
-                width="10px"
-                height="10px"
-                viewBox="0 0 50 50"
-                style={{ enableBackground: "new 0 0 50 50" }}
-              >
-                <rect fill="none" width="50" height="50" />
-                <polyline
-                  fill="none"
-                  points="40,7 40,16 31,15.999"
-                  stroke="#000"
-                  strokeLinecap="round"
-                  strokeMiterlimit="10"
-                  strokeWidth="2"
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "16px",
+                borderRadius: "8px",
+              }}
+            >
+              {/* {imageUploadUrl && (
+                <img
+                  src={imageUploadUrl}
+                  alt="Uploaded"
+                  style={{
+                    width: "128px",
+                    height: "128px",
+                    objectFit: "cover",
+                    borderRadius: "8px",
+                  }}
                 />
-                <path
-                  d="M41.999,25c0,9.39-7.61,17-17,17s-17-7.61-17-17s7.61-17,17-17c5.011,0,9.516,2.167,12.627,5.616c0.618,0.686,1.182,1.423,1.683,2.203"
-                  fill="none"
-                  stroke="#000"
-                  strokeLinecap="round"
-                  strokeMiterlimit="10"
-                  strokeWidth="2"
-                />
-              </svg>
+              )} */}
+              <input
+                type="file"
+                accept="image/png, image/jpeg"
+                onChange={handleImageChange}
+                style={{
+                  border: "1px solid #ccc",
+                  padding: "8px",
+                  borderRadius: "8px",
+                  width: "100%",
+                  cursor: "pointer",
+                }}
+              />
+              {/* {imageUploadUrl && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    cursor: "pointer",
+                    marginTop: "8px",
+                  }}
+                  onClick={onImageSubmitHandler}
+                >
+                  <button
+                    style={{
+                      backgroundColor: "#007bff",
+                      color: "#fff",
+                      padding: "8px 16px",
+                      borderRadius: "8px",
+                      border: "none",
+                    }}
+                  >
+                    Submit
+                  </button>
+                  <svg
+                    width="20px"
+                    height="20px"
+                    viewBox="0 0 50 50"
+                    style={{ fill: "currentColor", color: "#555" }}
+                  >
+                    <rect fill="none" width="50" height="50" />
+                    <polyline
+                      fill="none"
+                      points="40,7 40,16 31,15.999"
+                      stroke="#000"
+                      strokeLinecap="round"
+                      strokeMiterlimit="10"
+                      strokeWidth="2"
+                    />
+                    <path
+                      d="M41.999,25c0,9.39-7.61,17-17,17s-17-7.61-17-17s7.61-17,17-17c5.011,0,9.516,2.167,12.627,5.616c0.618,0.686,1.182,1.423,1.683,2.203"
+                      fill="none"
+                      stroke="#000"
+                      strokeLinecap="round"
+                      strokeMiterlimit="10"
+                      strokeWidth="2"
+                    />
+                  </svg>
+                </div>
+              )} */}
             </div>
           ),
         },
       ]);
+    } else if (currentState === "without_picture") {
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "bot",
+          text: "enter your concern in the text box.",
+          type: "text",
+        },
+      ]);
+      setCurrentState("push_the_raised_ticket_to_backend");
     }
   }, [currentState, token]);
   console.log("selectedOrder", selectedOrder);
@@ -905,8 +1048,32 @@ const ChatBot = () => {
       if (selectedOption) {
         handleStateTransition(selectedOption.next);
       }
-    }
+    } else if (currentState === "with_picture") {
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "user",
+          text: userInput,
+        },
+      ]);
+    } else if (currentState === "push_the_raised_ticket_to_backend") {
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "user",
+          text: userInput,
+          type: "text",
+        },
+      ]);
 
+      PushTheRaisedTicketToBackend({
+        userDetails,
+        mobileNumber,
+        imageUploadFile,
+        ticket_title: raiseTicketBy,
+        ticket_details: userInput,
+      });
+    }
     setUserInput("");
   };
 
@@ -927,10 +1094,6 @@ const ChatBot = () => {
   //     handleStateTransition(selectedOption.next);
   //   }
   // };
-
-  cosnt sendImage = () => {
-
-  }
 
   const selectInputOption = (option) => {
     let currentConfig;
@@ -1103,6 +1266,7 @@ const ChatBot = () => {
       marginBottom: 2,
       // maxWidth: "70%",
       fontSize: 14,
+      position: "relative",
       // border: "1px solid #ff0080",
     },
     botMessage: {
@@ -1275,7 +1439,12 @@ const ChatBot = () => {
               style={styles.input}
             />
             {/* <button style={styles.sendButton}> */}
-            <SentSVGComponent />
+            <button
+              onSubmit="submit"
+              style={{ background: "transparent", border: "none" }}
+            >
+              <SentSVGComponent />
+            </button>
             {/* </button> */}
           </div>
         </form>
@@ -1554,4 +1723,32 @@ const FetchAllOrderDetails = async (
     setIsOrderLoading(false);
     return null;
   }
+};
+
+const PushTheRaisedTicketToBackend = ({
+  userDetails,
+  mobileNumber,
+  imageUploadFile,
+  ticket_title,
+  ticket_details,
+}) => {
+  console.log("imageUploadFile", imageUploadFile);
+  const formdata = new FormData();
+  formdata.append("title", ticket_title);
+  formdata.append("ticket_details", ticket_details);
+  formdata.append("customer_name", userDetails?.firstName);
+  formdata.append("phone", mobileNumber);
+  formdata.append("email_id", userDetails?.email_id);
+  formdata.append("attachment", imageUploadFile, "/path/to/file");
+
+  const requestOptions = {
+    method: "POST",
+    body: formdata,
+    redirect: "follow",
+  };
+
+  fetch("http://localhost:7100/apis/kapture/raiseaticket", requestOptions)
+    .then((response) => response.text())
+    .then((result) => console.log(result))
+    .catch((error) => console.error(error));
 };
