@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { AiOutlineClose, AiOutlineMessage } from "react-icons/ai";
 import { PaperClip, SentSVGComponent } from "./svg";
 
-// const apiUrl = "https://b071-103-206-131-194.ngrok-free.app";
+const apiUrl = "http://localhost:7100";
 
 const Return_reason_options = [
   {
@@ -69,6 +69,55 @@ const ChatBot = () => {
   const [orderItemsDetails, setOrderItemsDetails] = useState([]);
   const [imageUploadUrl, setImageUploadUrl] = useState("");
   const [imageUploadFile, setImageUploadFile] = useState("");
+  const [location, setLocation] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const getLocation = () => {
+    setLoading(true);
+    setError(null);
+
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser");
+      setLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setLocation({ latitude, longitude });
+        setLoading(false);
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "user",
+            text: (
+              <div
+                style={{
+                  padding: "0px 14px",
+                  fontSize: "16px",
+                  borderRadius: "5px",
+                  display: "flex",
+                  alignItems: "center",
+                  fontSize: "14px",
+                  gap: "5px",
+                }}
+              >
+                <LocationSvg size="30px" /> Fetched successfully
+              </div>
+            ),
+            type: "text",
+          },
+        ]);
+      },
+      (err) => {
+        setError(err.message);
+        setLoading(false);
+      }
+    );
+  };
+
+  console.log("location", location);
   const RaiseTicket = () => {};
 
   const Dropdown = () => {
@@ -115,7 +164,7 @@ const ChatBot = () => {
         options: [
           { text: "End the chat", next: "end_the_chat" },
           { text: "Talk to a live agent", next: "talk_to_a_live_agent" },
-          { text: "Back to main menu", next: "back_to_main_menu" },
+          { text: "Back to main menu", next: "greeting" },
         ],
       },
       end_the_chat: {
@@ -162,12 +211,12 @@ const ChatBot = () => {
           { text: "Order related issue", next: "order_issues" },
           { text: "Payment queries or issues", next: "payment_related" },
           { text: "Policy & conditions", next: "policy_related" },
-          { text: "Pin code serviceability", next: "pin_code_serviceability" },
-          { text: "Locate store near me", next: "locate_store_near_me" },
+          // { text: "Pin code serviceability", next: "pin_code_serviceability" },
+          { text: "Offline store", next: "offline_store" },
           { text: "Customer feedback", next: "customer_feedback" },
           { text: "Ticket status", next: "ticket_status" },
           { text: "Issue not listed", next: "issue_not_listed" },
-          { text: "End of chat", next: "end_of_chat" },
+          // { text: "End of chat", next: "end_of_chat" },
         ],
       },
       order_issues: {},
@@ -189,9 +238,7 @@ const ChatBot = () => {
       pin_code_serviceability: {
         message: "Check the availability of delivery at a particular pincode",
       },
-      locate_store_near_me: {
-        message: "Store locator as on the website prompts up.",
-      },
+      offline_store: {},
       customer_feedback: {
         message: "",
         options: [
@@ -206,8 +253,78 @@ const ChatBot = () => {
           },
         ],
       },
+      customer_feedback_order_issues: {},
+      customer_feedback_delivery_feedback: {},
+      customer_feedback_delivery_complaints: {
+        options: [
+          {
+            text: "Delivery person was rude",
+            next: "delivery_person_was_rude",
+          },
+          { text: "Asked for extra tip", next: "asked_for_extra_tip" },
+          {
+            text: "No change with delivery person",
+            next: "no_change_with_delivery_person",
+          },
+          { text: "Other complaints", next: "other_complaints" },
+        ],
+      },
+      delivery_person_was_rude: {
+        message:
+          "We sincerely apologize for the experience you had with the delivery agent. Please raise a ticket with details of the incident, and we will address the matter with our delivery partner.",
+        options: [
+          {
+            text: "Raise a ticket",
+            next: "raise_a_ticket_delivery_person_was_rude",
+          },
+        ],
+      },
+      raise_a_ticket_delivery_person_was_rude: {},
+      asked_for_extra_tip: {
+        message:
+          "We sincerely apologize for the experience you had with the delivery agent. We will address this matter with our delivery partner.",
+      },
+      no_change_with_delivery_person: {
+        message:
+          "We sincerely apologize for the experience you had with the delivery agent. We will address this matter with our delivery partner.",
+      },
+      other_complaints: {
+        message:
+          "If an official NNNOW coupon is not applying within its validity period, please raise a ticket, and we'll address the issue promptly.",
+        options: [
+          {
+            text: "Raise a ticket",
+            next: "raise_a_ticket_other_complaints",
+          },
+        ],
+      },
+      raise_a_ticket_other_complaints: {},
       issue_not_listed: {
-        message: "Please type out your query",
+        // message: "Please type out your query",
+        options: [
+          { text: "Type out your query", next: "type_out_your_query" },
+          { text: "Talk to a Live Agent", next: "talk_to_a_live_agent" },
+          { text: "Request a callback", next: "request_a_callback" },
+          { text: "Contact us", next: "contact_us" },
+        ],
+      },
+      type_out_your_query: {
+        message: "Please type out your query"
+      },
+      request_a_callback: {},
+      contact_us: {
+        message: (
+          <div>
+            <div>Please contact us with our contact number</div>
+            <div>
+              <b>Mob. :</b> +91-8147493085
+            </div>
+            <div>
+              <b>Email :</b> care@nnnow.com.
+            </div>
+            <strong>We are 24X7 available</strong>
+          </div>
+        ),
       },
       return_related: {
         options: [
@@ -354,7 +471,7 @@ const ChatBot = () => {
           },
         ],
       },
-      raise_a_ticket_switching_from_COD_to_prepaid:{},
+      raise_a_ticket_switching_from_COD_to_prepaid: {},
       particular_payment_method_not_accepted: {
         message:
           "We accept all regulated payment methods, including UPI, cards, internet banking, and wallets. If a particular payment method isn't working. it could be due to a server issue. Please try again after some time.",
@@ -373,8 +490,8 @@ const ChatBot = () => {
           },
         ],
       },
-      raise_a_ticket_coupon_not_applicable:{},
-
+      raise_a_ticket_coupon_not_applicable: {},
+      feedback: {},
       // --------------- Policy related ----------------
       policy_related: {
         options: [
@@ -420,7 +537,7 @@ const ChatBot = () => {
           "Returns cannot be initiated for certain categories, including innerwear and items purchased on specific promotional discounts. These exclusions are in place due to hygiene and promotional policies.",
       },
       conditions_for_return_initiation: {
-        messgae:
+        message:
           "For a product to be eligible for return, it must be in new, unused condition and returned in its original packaging with all tags intact. This ensures that the item is in a resellable state.",
       },
       return_a_product_with_gift: {
@@ -522,6 +639,7 @@ const ChatBot = () => {
   const [mobileNumber, setMobileNumber] = useState("");
 
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedItem, setSelectedItem] = useState("");
 
   const [isOrderLoading, setIsOrderLoading] = useState(false);
   const [botResponseLoading, setBotResponseLoading] = useState(false);
@@ -621,6 +739,7 @@ const ChatBot = () => {
     if (!stateConfig) return;
 
     setCurrentState(nextState);
+
     console.log(
       "nextState12",
       stateConfig.message ? stateConfig.message : "NULL"
@@ -839,7 +958,8 @@ const ChatBot = () => {
     // console.log("token", token);
     if (
       (currentState === "order_issues" && token) ||
-      (currentState === "switching_from_COD_to_prepaid" && token)
+      (currentState === "switching_from_COD_to_prepaid" && token) ||
+      (currentState === "customer_feedback_order_issues" && token)
     ) {
       FetchAllOrderDetails(
         token,
@@ -856,14 +976,15 @@ const ChatBot = () => {
         currentState === "product_related") &&
       token
     ) {
-      console.log("currentState  123213");
       fetchSingleOrderDetails(
         token,
         setMessages,
         handleStateTransition,
         styles,
         selectedOrder,
-        setOrderItemsDetails
+        setOrderItemsDetails,
+        setSelectedItem,
+        { NextHandler: "reason_for_return" }
       );
     } else if (currentState === "reason_for_return") {
       setMessages((prev) => [
@@ -891,9 +1012,11 @@ const ChatBot = () => {
     } else if (
       currentState === "raise_a_ticket_money_deducted_order_not_confirmed" ||
       currentState === "raise_a_ticket_switching_from_COD_to_prepaid" ||
-      currentState === "raise_a_ticket_coupon_not_applicable"
+      currentState === "raise_a_ticket_coupon_not_applicable" ||
+      currentState === "raise_a_ticket_delivery_person_was_rude" ||
+      currentState === "raise_a_ticket_other_complaints"
     ) {
-     console.log("raise_a_ticket_switching_from_COD_to_prepaid");
+      // console.log("raise_a_ticket_switching_from_COD_to_prepaid");
       setRaiseTicketBy(RaiseTicketByFinder(currentState));
       handleStateTransition("choose_image_options");
     } else if (currentState === "with_picture") {
@@ -916,18 +1039,6 @@ const ChatBot = () => {
                 borderRadius: "8px",
               }}
             >
-              {/* {imageUploadUrl && (
-                <img
-                  src={imageUploadUrl}
-                  alt="Uploaded"
-                  style={{
-                    width: "128px",
-                    height: "128px",
-                    objectFit: "cover",
-                    borderRadius: "8px",
-                  }}
-                />
-              )} */}
               <input
                 type="file"
                 accept="image/png, image/jpeg"
@@ -940,54 +1051,6 @@ const ChatBot = () => {
                   cursor: "pointer",
                 }}
               />
-              {/* {imageUploadUrl && (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    cursor: "pointer",
-                    marginTop: "8px",
-                  }}
-                  onClick={onImageSubmitHandler}
-                >
-                  <button
-                    style={{
-                      backgroundColor: "#007bff",
-                      color: "#fff",
-                      padding: "8px 16px",
-                      borderRadius: "8px",
-                      border: "none",
-                    }}
-                  >
-                    Submit
-                  </button>
-                  <svg
-                    width="20px"
-                    height="20px"
-                    viewBox="0 0 50 50"
-                    style={{ fill: "currentColor", color: "#555" }}
-                  >
-                    <rect fill="none" width="50" height="50" />
-                    <polyline
-                      fill="none"
-                      points="40,7 40,16 31,15.999"
-                      stroke="#000"
-                      strokeLinecap="round"
-                      strokeMiterlimit="10"
-                      strokeWidth="2"
-                    />
-                    <path
-                      d="M41.999,25c0,9.39-7.61,17-17,17s-17-7.61-17-17s7.61-17,17-17c5.011,0,9.516,2.167,12.627,5.616c0.618,0.686,1.182,1.423,1.683,2.203"
-                      fill="none"
-                      stroke="#000"
-                      strokeLinecap="round"
-                      strokeMiterlimit="10"
-                      strokeWidth="2"
-                    />
-                  </svg>
-                </div>
-              )} */}
             </div>
           ),
         },
@@ -1002,8 +1065,119 @@ const ChatBot = () => {
         },
       ]);
       setCurrentState("push_the_raised_ticket_to_backend");
-    }
+    } else if (currentState === "feedback") {
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "bot",
+          text: (
+            <div>
+              <p>
+                Please share your feedback about this product. Your opinion
+                helps us improve our services.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <textarea
+                  rows={5}
+                  style={{
+                    border: "1px solid #ff0057",
+                    borderRadius: "10px",
+                    height: "auto", // Ensures height adjusts to rows
+                    resize: "vertical", // Optional: allows vertical resizing, prevents overriding rows
+                  }}
+                />
+                <input
+                  type="file"
+                  accept="image/png, image/jpeg"
+                  onChange={handleImageChange}
+                  style={{
+                    border: "1px solid #ccc",
+                    padding: "4px 2px",
+                    paddingLeft: 7,
+                    borderRadius: "8px",
+                    width: "100%",
+                    cursor: "pointer",
+                  }}
+                />
+                <button style={styles.submitbutton}>Submit Feedback</button>
+              </div>
+            </div>
+          ),
+          type: "text",
+        },
+      ]);
+    } else if (currentState === "customer_feedback_delivery_feedback") {
+      FetchAllOrderDetails(
+        token,
+        setOrderDetails,
+        setIsOrderLoading,
+        setMessages,
+        setSelectedOrder,
+        handleStateTransition,
+        styles,
+        currentState
+      );
+    } else if (currentState === "offline_store") {
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "bot",
+          text: (
+            <div>
+              <button
+                onClick={getLocation}
+                disabled={loading}
+                style={{
+                  padding: "10px 20px",
+                  fontSize: "16px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  // backgroundColor: loading ? "#ccc" : "#007bff",
+                  // color: "white",
+                  border: "none",
+                  borderRadius: "5px",
+                  display: "flex",
+                  alignItems: "center",
+                  fontSize: "14px",
+                  gap: "5px",
+                }}
+              >
+                <LocationSvg size="30px" /> Tab for fetch current location
+              </button>
+            </div>
+          ),
+          type: "text",
+        },
+      ]);
+    } else if (currentState === "request_a_callback") {
+      RequestCall(setMessages, userDetails, mobileNumber);
+    } 
   }, [currentState, token]);
+
+  useEffect(() => {
+    if (
+      currentState === "customer_feedback_order_issues" ||
+      currentState === "customer_feedback_delivery_feedback"
+    ) {
+      fetchSingleOrderDetails(
+        token,
+        setMessages,
+        handleStateTransition,
+        styles,
+        selectedOrder,
+        setOrderItemsDetails,
+        setSelectedItem,
+        { NextHandler: "feedback" },
+        setCurrentState
+      );
+    }
+  }, [selectedOrder]);
+
+  // useEffect(() => {
+  //   if(currentState === "customer_feedback_order_issues"){
+  //     setCurrentState("feedback");
+  //   }
+  // }, [selectedItem]);
+
   console.log("selectedOrder", selectedOrder);
 
   const handleSendMessage = async (e) => {
@@ -1072,8 +1246,19 @@ const ChatBot = () => {
         imageUploadFile,
         ticket_title: raiseTicketBy,
         ticket_details: userInput,
+        handleStateTransition,
       });
+    } else if (currentState === "type_out_your_query") {
+      setMessages((prev) => [...prev, { sender: "user", text: userInput, type:"text" }]);
+      createAgent(
+        userInput,
+        userDetails.firstName,
+        mobileNumber,
+        userDetails.email,
+        setMessages
+      );
     }
+
     setUserInput("");
   };
 
@@ -1321,6 +1506,15 @@ const ChatBot = () => {
       cursor: "pointer",
       fontWeight: "600",
     },
+    submitbutton: {
+      padding: "10px 16px",
+      backgroundColor: "#ff0080",
+      color: "#fff",
+      borderRadius: "12px",
+      border: "none",
+      cursor: "pointer",
+      fontWeight: "600",
+    },
     toggleButton: {
       background: "linear-gradient(135deg, #9f009f 0%, #ff0080 100%)",
       color: "#fff",
@@ -1403,6 +1597,16 @@ const ChatBot = () => {
   // console.log("currentState", currentState);
   console.log("currentState", currentState);
 
+  const chatContainerRef = useRef(null);
+
+  useEffect(() => {
+    // Scroll to the bottom when messages change
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop =
+        chatContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   return (
     <div style={styles.mainContainer}>
       <div style={styles.container}>
@@ -1415,7 +1619,9 @@ const ChatBot = () => {
           </span>
         </div>
         {messages && (
-          <div style={styles.chatBody}>{messages.map(renderMessage)}</div>
+          <div style={styles.chatBody} ref={chatContainerRef}>
+            {messages.map(renderMessage)}
+          </div>
         )}
 
         <form style={styles.footer} onSubmit={handleSendMessage}>
@@ -1472,7 +1678,10 @@ const fetchSingleOrderDetails = async (
   handleStateTransition,
   styles,
   orderDetails,
-  setOrderItemsDetails
+  setOrderItemsDetails,
+  setSelectedItem,
+  NextHandler,
+  setCurrentState
 ) => {
   try {
     if (!orderDetails?.orderId) {
@@ -1517,7 +1726,7 @@ const fetchSingleOrderDetails = async (
           price: `₹${item?.product?.mrp}`,
         }));
 
-        const NextHandler = "reason_for_return";
+        // const NextHandler = "reason_for_return";
         setMessages((prev) => [
           ...prev,
           { sender: "bot", text: "Select a product:" },
@@ -1528,6 +1737,13 @@ const fetchSingleOrderDetails = async (
                 key={order.id}
                 style={styles.orderCard}
                 onClick={() => {
+                  setSelectedItem(order.id);
+                  if (NextHandler.NextHandler === "feedback") {
+                    setCurrentState(NextHandler.NextHandler);
+                  } else {
+                    handleStateTransition(NextHandler);
+                  }
+                  console.log("NextHandler", NextHandler);
                   setMessages((prev) => [
                     ...prev,
                     {
@@ -1560,7 +1776,6 @@ const fetchSingleOrderDetails = async (
                     },
                   ]);
                   // setSelectedOrder(order);
-                  handleStateTransition(NextHandler);
                 }}
               >
                 <img src={order?.image} alt="Order" style={styles.orderImage} />
@@ -1731,6 +1946,7 @@ const PushTheRaisedTicketToBackend = ({
   imageUploadFile,
   ticket_title,
   ticket_details,
+  handleStateTransition,
 }) => {
   console.log("imageUploadFile", imageUploadFile);
   const formdata = new FormData();
@@ -1747,8 +1963,138 @@ const PushTheRaisedTicketToBackend = ({
     redirect: "follow",
   };
 
-  fetch("http://localhost:7100/apis/kapture/raiseaticket", requestOptions)
+  fetch(`${apiUrl}/apis/kapture/raiseaticket`, requestOptions)
     .then((response) => response.text())
-    .then((result) => console.log(result))
+    .then((result) => {
+      console.log(result);
+      handleStateTransition("end_of_chat");
+    })
     .catch((error) => console.error(error));
+};
+
+const LocationSvg = ({ size }) => (
+  <svg
+    fill="#b60099"
+    height={size}
+    width={size}
+    version="1.1"
+    id="Capa_1"
+    viewBox="0 0 297 297"
+    stroke="#b60099"
+  >
+    <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+    <g
+      id="SVGRepo_tracerCarrier"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    ></g>
+    <g id="SVGRepo_iconCarrier">
+      {" "}
+      <g>
+        {" "}
+        <path d="M148.5,0C87.43,0,37.747,49.703,37.747,110.797c0,91.026,99.729,179.905,103.976,183.645 c1.936,1.705,4.356,2.559,6.777,2.559c2.421,0,4.841-0.853,6.778-2.559c4.245-3.739,103.975-92.618,103.975-183.645 C259.253,49.703,209.57,0,148.5,0z M148.5,272.689c-22.049-21.366-90.243-93.029-90.243-161.892 c0-49.784,40.483-90.287,90.243-90.287s90.243,40.503,90.243,90.287C238.743,179.659,170.549,251.322,148.5,272.689z"></path>{" "}
+        <path d="M148.5,59.183c-28.273,0-51.274,23.154-51.274,51.614c0,28.461,23.001,51.614,51.274,51.614 c28.273,0,51.274-23.153,51.274-51.614C199.774,82.337,176.773,59.183,148.5,59.183z M148.5,141.901 c-16.964,0-30.765-13.953-30.765-31.104c0-17.15,13.801-31.104,30.765-31.104c16.964,0,30.765,13.953,30.765,31.104 C179.265,127.948,165.464,141.901,148.5,141.901z"></path>{" "}
+      </g>{" "}
+    </g>
+  </svg>
+);
+
+const RequestCall = async (setMessages, userDetails, mobileNumber) => {
+  try {
+    // Validate required parameters first
+    if (!userDetails?.firstName || !mobileNumber) {
+      throw new Error("Missing required parameters: username or phone number");
+    }
+
+    // Construct URL with proper encoding
+    const baseUrl = "https://victor.fixall.ai/apis/agent/callaAgent";
+    const params = new URLSearchParams({
+      username: userDetails.firstName,
+      phone: mobileNumber,
+    }).toString();
+    const url = `${baseUrl}?${params}`;
+
+    // Make the API call
+    const fetchResponse = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json", // Added Accept header
+      },
+    });
+
+    // Check response status
+    if (!fetchResponse.ok) {
+      const errorText = await fetchResponse.text();
+      throw new Error(
+        `HTTP error! status: ${fetchResponse.status} - ${errorText}`
+      );
+    }
+
+    // Parse JSON response
+    const data = await fetchResponse.json();
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "bot",
+        text: "Request for a callback has been initiated. An agent will call you shortly.",
+      },
+    ]);
+  } catch (err) {
+    // Ensure err is an Error object and provide fallback
+    const errorMessage =
+      err instanceof Error
+        ? err.message
+        : "An unexpected error occurred while calling the agent";
+
+    // setError(errorMessage);
+
+    // Optional: Log error for debugging
+    console.error("Callback request failed:", err);
+  }
+};
+
+const createAgent = async (query, customerName, phone, email, setMessages) => {
+ console.log(
+   "query, customerName, phone, email, setMessages",
+   query,
+   customerName,
+   phone,
+   email,
+   setMessages
+ );
+  try {
+    const response = await fetch("https://victor.fixall.ai/apis/agent/create", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        // Add any additional headers if required (like authorization)
+      },
+      body: JSON.stringify({
+        query: query,
+        customer_name: customerName,
+        phone: phone,
+        email_id: email,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+
+    const data = await response.json();
+    if (data) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "bot",
+          text: "Thank you for your query. Our team will get back to you soon.",
+        },
+      ]);
+    }
+    return data;
+  } catch (error) {
+    console.error("Error creating agent:", error);
+    throw error;
+  }
 };
