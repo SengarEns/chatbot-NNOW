@@ -81,7 +81,7 @@ const NnnowChatBot = () => {
   const [pincode, setPincode] = useState("");
   const [brandName, setBrandName] = useState("Arrow");
 
-  const brandNameRef = useRef()
+  const brandNameRef = useRef();
 
   useEffect(() => {
     if (brandName) {
@@ -89,9 +89,9 @@ const NnnowChatBot = () => {
       // console.log("brandNamebrandName",brandNameRef.current)
     }
   }, [brandName]);
-  
-  console.log("brandNamebrandName",brandNameRef.current)
-  
+
+  console.log("brandNamebrandName", brandNameRef.current);
+
   const getLocation = () => {
     setLoading(true);
     setError(null);
@@ -108,6 +108,8 @@ const NnnowChatBot = () => {
         setLocation({ latitude, longitude });
         setLoading(false);
         getPinCodeByLatLng(latitude, longitude).then((data) => {
+          if(data?.pincode){
+
           setPincode(data?.pincode);
           // console.log("1231@# 1231@#", data?.pincode);
           setMessages((prev) => [
@@ -186,7 +188,9 @@ const NnnowChatBot = () => {
                   )}
 
                   <button
-                    onClick={() => StoreByPincodeHandler(data.pincode, brandNameRef.current)}
+                    onClick={() =>
+                      StoreByPincodeHandler(data.pincode, brandNameRef.current)
+                    }
                     style={{
                       marginTop: "12px",
                       width: "100%",
@@ -214,6 +218,8 @@ const NnnowChatBot = () => {
               type: "text",
             },
           ]);
+        }
+
         }); // Added missing closing parenthesis for .then
       },
       (err) => {
@@ -2429,25 +2435,27 @@ const NnnowChatBot = () => {
 
   console.log("currentState", currentState);
 
-
-
   const StoreByPincodeHandler = (pincode, brandName) => {
-    console.log("Inputs received in StoreByPincodeHandler:", {
-      pincode,
-      brandNameRef,
-    });
-    // console.log("DEBUG - Pincode Check: 1231@# =>", pincode);
-    // if (!pincode || !brandName) {
-    //   throw new Error("Pincode and brandName are required");
-    // }
-    getAllStoreFromPincode(pincode, brandName )
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "user",
+        text: (
+          <span style={{ color: "#fff", fontWeight: "600" }}>{brandName}</span>
+        ),
+
+        type: "text",
+      },
+    ]);
+
+    getAllStoreFromPincode(pincode, brandName)
       .then((data) => {
         console.log("stores=> ", data.stores);
         setMessages((prev) => [
           ...prev,
           {
-            text: "",
-            message: "coding part is not done...",
+            sender: "bot",
+            text: "coding part is not done...",
             type: "text",
           },
         ]);
@@ -2455,25 +2463,27 @@ const NnnowChatBot = () => {
       .catch((error) => console.error("Failed to fetch stores:", error));
   };
 
-  console.log("123421",pincode,brandName)
+  console.log("123421", pincode, brandName);
 
-  const getAllStoreFromPincode = async (pincode, brandName ) => {
+  const getAllStoreFromPincode = async (pincode, brandName) => {
     console.log("DEBUG - Pincode Check: 1231@# =>", pincode, brandName);
     try {
-  
-      const response = await fetch("https://victor.fixall.ai/apis/store/offlineStore", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ brandName, pinCode: pincode }),
-        redirect: "follow",
-      });
-  
+      const response = await fetch(
+        "https://victor.fixall.ai/apis/store/offlineStore",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ brandName, pinCode: pincode }),
+          redirect: "follow",
+        }
+      );
+
       if (!response.ok) {
         // throw new Error(`HTTP error! Status: ${response.status}`);
       }
-  
+
       return await response.json();
     } catch (error) {
       console.error("Error fetching store data:", error);
