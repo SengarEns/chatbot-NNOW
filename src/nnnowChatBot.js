@@ -2,7 +2,8 @@ import React, { useEffect, useState, useRef } from "react";
 import { AiOutlineClose, AiOutlineMessage } from "react-icons/ai";
 import { PaperClip, SentSVGComponent } from "./svg";
 
-const apiUrl = "http://localhost:7100";
+// const apiUrl = "http://localhost:7100";
+const apiUrl = "https://victor.fixall.ai";
 
 const Return_reason_options = [
   {
@@ -274,6 +275,15 @@ const NnnowChatBot = () => {
   const FLOW_CONFIG = {
     main_flow: {
       // ----------------------------------------------------------------
+      something_went_wrong : {
+        message:"something went wrong",
+        options: [
+          { text: "End the chat", next: "end_the_chat" },
+          { text: "Talk to a live agent", next: "talk_to_a_live_agent" },
+          { text: "Back to main menu", next: "greeting" },
+        ],
+      },
+
       end_of_chat: {
         options: [
           { text: "End the chat", next: "end_the_chat" },
@@ -737,6 +747,8 @@ const NnnowChatBot = () => {
           },
         ],
       },
+      raise_a_ticket_pickup_status_not_displayed_incorrect: {},
+
       pickup_not_done: {
         message:
           "Your return pickup was expected to be completed by today but due to unforeseen circumstances,it will be picked up by tomorrow. We applogize for the delay.If you have any further queries,please raise a ticket",
@@ -747,7 +759,7 @@ const NnnowChatBot = () => {
           },
         ],
       },
-      raise_a_ticket_pickup_status_not_displayed_incorrect: {},
+      raise_a_ticket_pickup_not_done:{},
       return_my_product: {},
       reason_for_return: {},
       pickup_not_successful: {
@@ -760,6 +772,7 @@ const NnnowChatBot = () => {
           },
         ],
       },
+      raise_a_ticket_pickup_not_successful:{},
       return_rejected: {
         message:
           "Our company guidelines require that returned products be in new, unused condition and returned in orignal packaging along with tags. If you believe there has been an error in this judgment, please raise a ticket with us",
@@ -808,10 +821,11 @@ const NnnowChatBot = () => {
         options: [
           {
             text: "Raise a ticket",
-            next: "pincode_not_serviceable_raise_a_ticket",
+            next: "raise_a_ticket_pincode_not_serviceable",
           },
         ],
       },
+      raise_a_ticket_pincode_not_serviceable:{},
       refund_related: {
         options: [
           { text: "Status of my Refund", next: "status_of_my_refund" },
@@ -830,7 +844,7 @@ const NnnowChatBot = () => {
       },
       status_of_my_refund: {
         message:
-          "Currently. your refund is under — stage. It typically takes S to 7 working days for the refund to reflect in your bank account.",
+          "Currently. your refund is under — stage. It typically takes 5 to 7 working days for the refund to reflect in your bank account.",
       },
       refund_delayed: {},
       refund_not_initiated: {},
@@ -1116,7 +1130,8 @@ const NnnowChatBot = () => {
 
   const [isOrderLoading, setIsOrderLoading] = useState(false);
   const [botResponseLoading, setBotResponseLoading] = useState(false);
-  const apiUrl = "http://localhost:7100";
+  // const apiUrl = "http://localhost:7100";
+  const apiUrl = "https://victor.fixall.ai";
 
   console.log("orderDetails", orderDetails);
   console.log("selectedItemDetails", selectedItemDetails);
@@ -1470,9 +1485,9 @@ const NnnowChatBot = () => {
           }
         );
 
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
+        // if (!response.ok) {
+        //   throw new Error("Network response was not ok");
+        // }
 
         const data = await response.json();
         setTextAreaInput("");
@@ -1605,96 +1620,98 @@ const NnnowChatBot = () => {
         }
       });
     } else if (currentState === "return_my_product" && token) {
+
       const NextHandler = "reason_for_return";
-      fetchSingleOrderDetails(
-        token,
-        setMessages,
-        handleStateTransition,
-        styles,
-        selectedOrder,
-        setOrderItemsDetails,
-        setSelectedItem
-      ).then((data) => {
-        if (data?.status) {
-          setOrderItemsDetails(data);
+      handleStateTransition(NextHandler)
+    //   fetchSingleOrderDetails(
+    //     token,
+    //     setMessages,
+    //     handleStateTransition,
+    //     styles,
+    //     selectedOrder,
+    //     setOrderItemsDetails,
+    //     setSelectedItem
+    //   ).then((data) => {
+    //     if (data?.status) {
+    //       setOrderItemsDetails(data);
 
-          if (data.data && data.data?.consignments[0]?.items?.length > 0) {
-            const itemsToShow = data.data.consignments[0].items.map((item) => ({
-              id: item.itemId,
-              image: item?.product?.image,
-              brand: item?.product?.brand,
-              addressId: data.data?.consignments[0]?.addressDetails?.addressId,
-              price: `₹${item?.product?.mrp}`,
-            }));
-            setMessages((prev) => [
-              ...prev,
-              { sender: "bot", text: "Select a product:" },
-              {
-                sender: "bot",
-                text: itemsToShow.map((order) => (
-                  <div
-                    key={order.id}
-                    style={styles.orderCard}
-                    onClick={() => {
-                      setSelectedItemDetails(order);
+    //       if (data.data && data.data?.consignments[0]?.items?.length > 0) {
+    //         const itemsToShow = data.data.consignments[0].items.map((item) => ({
+    //           id: item.itemId,
+    //           image: item?.product?.image,
+    //           brand: item?.product?.brand,
+    //           addressId: data.data?.consignments[0]?.addressDetails?.addressId,
+    //           price: `₹${item?.product?.mrp}`,
+    //         }));
+    //         setMessages((prev) => [
+    //           ...prev,
+    //           { sender: "bot", text: "Select a product:" },
+    //           {
+    //             sender: "bot",
+    //             text: itemsToShow.map((order) => (
+    //               <div
+    //                 key={order.id}
+    //                 style={styles.orderCard}
+    //                 onClick={() => {
+    //                   setSelectedItemDetails(order);
 
-                      setSelectedItem(order.id);
-                      // Fix: Use NextHandler directly since it's a string
-                      if (NextHandler === "feedback") {
-                        setCurrentState(NextHandler);
-                      } else {
-                        handleStateTransition(NextHandler);
-                      }
-                      console.log("NextHandler", NextHandler);
-                      setMessages((prev) => [
-                        ...prev,
-                        {
-                          sender: "user",
-                          showAs: "object",
-                          text: (
-                            <div style={styles.orderCard}>
-                              {/* Order Image */}
-                              <img
-                                src={order?.image}
-                                alt="Order"
-                                style={styles.orderImage}
-                              />
+    //                   setSelectedItem(order.id);
+    //                   // Fix: Use NextHandler directly since it's a string
+    //                   if (NextHandler === "feedback") {
+    //                     setCurrentState(NextHandler);
+    //                   } else {
+    //                     handleStateTransition(NextHandler);
+    //                   }
+    //                   console.log("NextHandler", NextHandler);
+    //                   setMessages((prev) => [
+    //                     ...prev,
+    //                     {
+    //                       sender: "user",
+    //                       showAs: "object",
+    //                       text: (
+    //                         <div style={styles.orderCard}>
+    //                           {/* Order Image */}
+    //                           <img
+    //                             src={order?.image}
+    //                             alt="Order"
+    //                             style={styles.orderImage}
+    //                           />
 
-                              {/* Order Details */}
-                              <div style={styles.orderDetails}>
-                                <span style={styles.orderAmount}>
-                                  {order?.price}
-                                </span>
-                                <span style={styles.orderId}>
-                                  ID: {order?.id}
-                                </span>
-                              </div>
-                            </div>
-                          ),
-                        },
-                      ]);
-                    }}
-                  >
-                    <img
-                      src={order?.image}
-                      alt="Order"
-                      style={styles.orderImage}
-                    />
+    //                           {/* Order Details */}
+    //                           <div style={styles.orderDetails}>
+    //                             <span style={styles.orderAmount}>
+    //                               {order?.price}
+    //                             </span>
+    //                             <span style={styles.orderId}>
+    //                               ID: {order?.id}
+    //                             </span>
+    //                           </div>
+    //                         </div>
+    //                       ),
+    //                     },
+    //                   ]);
+    //                 }}
+    //               >
+    //                 <img
+    //                   src={order?.image}
+    //                   alt="Order"
+    //                   style={styles.orderImage}
+    //                 />
 
-                    {/* Order Details */}
-                    <div style={styles.orderDetails}>
-                      <span style={styles.orderAmount}>{order?.price}</span>
-                      <span style={styles.orderId}>ID: {order?.id}</span>
-                    </div>
-                  </div>
-                )),
-                type: "input",
-                showAs: "object",
-              },
-            ]);
-          }
-        }
-      });
+    //                 {/* Order Details */}
+    //                 <div style={styles.orderDetails}>
+    //                   <span style={styles.orderAmount}>{order?.price}</span>
+    //                   <span style={styles.orderId}>ID: {order?.id}</span>
+    //                 </div>
+    //               </div>
+    //             )),
+    //             type: "input",
+    //             showAs: "object",
+    //           },
+    //         ]);
+    //       }
+    //     }
+      // });
     } else if (currentState === "reason_for_return") {
       ReasonReturnList(token, selectedOrder?.orderId, selectedItem).then(
         (data) =>
@@ -1757,6 +1774,7 @@ const NnnowChatBot = () => {
       currentState === "raise_a_ticket_brand_tags_not_attached" ||
       currentState === "raise_a_ticket_change_delivery_address" ||
       currentState === "raise_a_ticket_change_mobile_number" ||
+      currentState === "raise_a_ticket_pincode_not_serviceable" ||
       currentState ===
         "raise_a_ticket_change_my_pickup_address_If_return_not_out_for_pickup"
     ) {
@@ -2069,15 +2087,16 @@ const NnnowChatBot = () => {
       const ItemLog =
         selectedOrderDetails &&
         selectedOrderDetails?.items.find((t) => t.itemId === selectedItem);
-      if (ItemLog.isBeyond7DaysFromRefund) {
+        console.log("ItemLog",ItemLog)
+      if (ItemLog?.isBeyond7DaysFromRefund) {
         handleStateTransition("beyond7DaysFromRefund");
       } else {
         handleStateTransition("under7DaysFromRefund");
       }
     } else if (currentState === "refund_not_initiated") {
-      const ItemLog =
-        selectedOrderDetails &&
-        selectedOrderDetails?.items.find((t) => t.itemId === selectedItem);
+      const ItemLog = selectedOrderDetails 
+    ? selectedOrderDetails.items.find((t) => t.itemId === selectedItem) 
+    : null;
 
       if (ItemLog.isBeyond24HoursFromRefund) {
         handleStateTransition("beyond24HoursFromRefund");
@@ -2366,7 +2385,7 @@ const NnnowChatBot = () => {
         setMessages((prev) => [
           ...prev,
           { sender: "user", text: userInput, type: "text" },
-          { sender: "bot", text: "t", type: "text" },
+          { sender: "bot", text: "Return initiated", type: "text" },
         ]);
         handleStateTransition("end_of_chat");
       });
@@ -2392,7 +2411,15 @@ const NnnowChatBot = () => {
               },
             ]);
           } else {
-            throw new Error("Phone number update failed");
+            setMessages((prev) => [
+              ...prev,
+              {
+                sender: "user",
+                text: "Phone number update failed",
+                type: "text",
+              }
+            ])
+       
           }
         })
         .catch((error) => {
@@ -2936,7 +2963,7 @@ const fetchSingleOrderDetails = async (
     );
 
     if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+      // throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
     const data = await response.json();
@@ -3214,13 +3241,24 @@ const PushTheRaisedTicketToBackend = ({
   handleStateTransition,
 }) => {
   console.log("imageUploadFile", imageUploadFile);
+
   const formdata = new FormData();
   formdata.append("title", ticket_title);
   formdata.append("ticket_details", ticket_details);
   formdata.append("customer_name", userDetails?.firstName);
   formdata.append("phone", mobileNumber);
   formdata.append("email_id", userDetails?.email_id);
-  formdata.append("attachment", imageUploadFile, "/path/to/file");
+
+  // Handle imageUploadFile correctly
+  if (imageUploadFile) {
+    // If it's a FileList (e.g., from <input type="file">), take the first file
+    const file = imageUploadFile instanceof FileList ? imageUploadFile[0] : imageUploadFile;
+    if (file instanceof Blob) { // Ensure it's a Blob or File
+      formdata.append("attachment", file); // Filename is optional, handled by the File object
+    } else {
+      console.error("imageUploadFile is not a valid file:", file);
+    }
+  }
 
   const requestOptions = {
     method: "POST",
@@ -3651,7 +3689,7 @@ const OrderDetailsbyOrderId = async (token, phone, orderId) => {
     };
 
     const response = await fetch(
-      "http://localhost:7100/apis/order/status",
+      `${apiUrl}/apis/order/status`,
       requestOptions
     );
     const result = await response.text();
