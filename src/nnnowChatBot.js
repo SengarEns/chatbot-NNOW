@@ -1556,7 +1556,7 @@ const requestOTP = async () => {
       );
     } else if (currentState === "show_item_details") {
       const NextHandler = "selected_order";
-
+      setBotResponseLoading(true)
       fetchSingleOrderDetails(
         token,
         setMessages,
@@ -1564,9 +1564,11 @@ const requestOTP = async () => {
         styles,
         selectedOrder,
         setOrderItemsDetails,
-        setSelectedItem
+        setSelectedItem,setBotResponseLoading
       ).then((data) => {
-        if (data.status) {
+        console.log("datadatadatadata",data)
+        if (data?.status) {
+          setBotResponseLoading(false)
           setOrderItemsDetails(data);
 
           if (data.data && data.data?.consignments[0]?.items?.length > 0) {
@@ -1642,6 +1644,8 @@ const requestOTP = async () => {
             ]);
           }
         }
+        setBotResponseLoading(false)
+
       });
     } else if (currentState === "return_my_product" && token) {
 
@@ -1911,8 +1915,10 @@ const requestOTP = async () => {
         selectedOrder,
         setOrderItemsDetails,
         setSelectedItem,
-        setCurrentState
+        setCurrentState,setBotResponseLoading 
       ).then((data) => {
+        setBotResponseLoading(false)
+
         if (data.status) {
           setOrderItemsDetails(data);
 
@@ -2041,8 +2047,10 @@ const requestOTP = async () => {
         setOrderItemsDetails,
         setSelectedItem,
 
-        setCurrentState
+        setCurrentState,setBotResponseLoading 
       ).then((data) => {
+        setBotResponseLoading(false)
+
         if (data.status) {
           setOrderItemsDetails(data);
 
@@ -2224,8 +2232,10 @@ const requestOTP = async () => {
         selectedOrder,
         setOrderItemsDetails,
         setSelectedItem,
-        setCurrentState
+        setCurrentState,setBotResponseLoading 
       ).then((data) => {
+        setBotResponseLoading(false)
+
         if (data.status) {
           setOrderItemsDetails(data);
 
@@ -2621,6 +2631,8 @@ const requestOTP = async () => {
   
     return (
       (isBot || isUser) && (
+        <>
+        
         <div
           key={index}
           style={{
@@ -2690,7 +2702,7 @@ const requestOTP = async () => {
                   justifyContent: isBot ? "flex-start" : "flex-end",
                 }}
               >
-                {botResponseLoading && isUser && index + 1 === messages.length && (
+                {/* {botResponseLoading && isUser && index + 1 === messages.length && (
                   <div
                     style={{
                       background: "red",
@@ -2700,7 +2712,7 @@ const requestOTP = async () => {
                   >
                     <Loader />
                   </div>
-                )}
+                )} */}
                 <div
                   style={{
                     ...styles.message,
@@ -2728,6 +2740,18 @@ const requestOTP = async () => {
               : "--"} */}
           </div>
         </div>
+        {botResponseLoading && isUser && index + 1 === messages.length && (
+          <div style={{display:"flex", gap:3, }}>
+                    <BotImage />
+
+                  <div
+                  
+                  >
+                    <Loader />
+                  </div>
+                </div>
+                )}
+        </>
       )
     );
   };
@@ -3008,9 +3032,11 @@ const fetchSingleOrderDetails = async (
   setOrderItemsDetails,
   setSelectedItem,
   NextHandler,
-  setCurrentState
+  setCurrentState,
+  // setBotResponseLoading
 ) => {
   try {
+    // setBotResponseLoading(true)
     if (!orderDetails?.orderId) {
       console.error("Order ID is missing.");
       return;
@@ -3058,8 +3084,9 @@ const FetchAllOrderDetails = async (
   currentState,setBotResponseLoading,
   { NextHandler }
 ) => {
+  // console.log("FetchAllOrderDetails FetchAllOrderDetails")
+  setBotResponseLoading(true);
   try {
-    setBotResponseLoading(true);
     const myHeaders = new Headers({
       accept: "application/json",
       "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
@@ -3088,20 +3115,19 @@ const FetchAllOrderDetails = async (
     );
 
     if (!response.ok) {
-      console.error("HTTP error! Status: ", response.status);
+      console.error("HTTP error! Status: ", response?.status);
       // throw new Error(`Error: ${response.status} - ${response.statusText}`);
     }
 
     const result = await response.json();
     console.log("rresultesult", result);
-    if (result.status) {
+    if (result?.status) {
       setOrderDetails(result.data?.ordersList);
       setBotResponseLoading(false);
 
       if (result.data?.ordersList && result.data?.ordersList.length > 0) {
         const ordersToShow = result.data.ordersList.slice(0, 4); // Get the first 2 orders
 
-        console.log("NextHandlerNextHandler", NextHandler);
         // const NextHandler =
         //   currentState === "order_issues"
         //     ? "selected_order"
@@ -3291,6 +3317,7 @@ const FetchAllOrderDetails = async (
         ]);
       }
     } else {
+      setBotResponseLoading(false)
       setMessages((prev) => [
         ...prev,
         { sender: "bot", text: "Something went wrong!" },
@@ -3403,7 +3430,7 @@ const RequestCall = async (setMessages, userDetails, mobileNumber) => {
     if (!fetchResponse.ok) {
       const errorText = await fetchResponse.text();
       throw new Error(
-        `HTTP error! status: ${fetchResponse.status} - ${errorText}`
+        `HTTP error! status: ${fetchResponse?.status} - ${errorText}`
       );
     }
 
@@ -3794,7 +3821,7 @@ const getPinCodeByLatLng = async (latitude, longitude) => {
     );
 
     if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+      throw new Error(`HTTP error! Status: ${response?.status}`);
     }
 
     const result = await response.json();
