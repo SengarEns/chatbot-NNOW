@@ -1267,7 +1267,6 @@ const NnnowChatBot = () => {
       { sender: "user", text: number },
       // { sender: "bot", text: "", isLoading: true },
     ]);
-    setBotResponseLoading(true);
 
     try {
       const response = await fetch(`${apiUrl}/apis/account/usercheck`, {
@@ -1311,7 +1310,6 @@ const NnnowChatBot = () => {
       { sender: "user", text: "••••••" },
       // { sender: "bot", text: "", isLoading: true },
     ]);
-    setBotResponseLoading(true);
 
     try {
       const response = await fetch(`${apiUrl}/apis/account/login`, {
@@ -1358,51 +1356,77 @@ const NnnowChatBot = () => {
       setBotResponseLoading(false);
     }
   };
+// request otp
+const requestOTP = async () => {
+  setMessages((prevMessages) => [
+    ...prevMessages,
+    { sender: "bot", text: "Requesting OTP...", isLoading: true },
+  ]);
+  setBotResponseLoading(true);
 
-  const requestOTP = async () => {
+  try {
+    const myHeaders = new Headers();
+    myHeaders.append("Accept-Language", "en-GB,en-US;q=0.9,en;q=0.8");
+    myHeaders.append("Connection", "keep-alive");
+    myHeaders.append("Content-Type", "application/json");
+    myHeaders.append("Origin", "https://preprod.nnnow.com");
+    myHeaders.append("Referer", "https://preprod.nnnow.com/");
+    myHeaders.append("Sec-Fetch-Dest", "empty");
+    myHeaders.append("Sec-Fetch-Mode", "cors");
+    myHeaders.append("Sec-Fetch-Site", "cross-site");
+    myHeaders.append("accept", "application/json");
+    myHeaders.append("bbversion", "v2");
+    myHeaders.append("clientSessionId", "1744601724291");
+    myHeaders.append("correlationId", "2015c0fc-65ab-480e-b5c6-7c88fd607819");
+    myHeaders.append("module", "odin");
+    myHeaders.append("sec-ch-ua", "\"Google Chrome\";v=\"131\", \"Chromium\";v=\"131\", \"Not_A Brand\";v=\"24\"");
+    myHeaders.append("sec-ch-ua-mobile", "?0");
+    myHeaders.append("sec-ch-ua-platform", "\"macOS\"");
+
+    const body = JSON.stringify({
+      mobileNumber: mobileNumber, // make sure this variable is defined
+      otpTemplateId: "591ec0f0bde6ce00083cdb45",
+    });
+
+    const requestOptions = {
+      method: "POST",
+      headers: myHeaders,
+      body: body,
+      redirect: "follow",
+    };
+
+    const response = await fetch(
+      "https://api-preprod.ailiens.com/d/apiV2/otp/generateOtp/v3/flash",
+      requestOptions
+    );
+
+    const result = await response.json();
+
     setMessages((prevMessages) => [
-      ...prevMessages,
-      // { sender: "bot", text: "", isLoading: true },
+      ...prevMessages.filter((msg) => !msg.isLoading),
+      {
+        sender: "bot",
+        text: result?.success
+          ? "✅ OTP has been sent to your mobile number."
+          : "❌ Failed to send OTP. Please try again.",
+        type: "text",
+      },
     ]);
-    setBotResponseLoading(true);
+  } catch (error) {
+    console.error("Error:", error);
+    setMessages((prevMessages) => [
+      ...prevMessages.filter((msg) => !msg.isLoading),
+      {
+        sender: "bot",
+        text: "😞 Sorry, we encountered an error. Please try again.",
+        type: "text",
+      },
+    ]);
+  } finally {
+    setBotResponseLoading(false);
+  }
+};
 
-    try {
-      const response = await fetch(`${apiUrl}/apis/account/send-otp`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          mobileNumber: mobileNumber,
-        }),
-      });
-
-      const result = await response.json();
-
-      setMessages((prevMessages) => [
-        ...prevMessages.filter((msg) => !msg.isLoading),
-        {
-          sender: "bot",
-          text: result.success
-            ? "OTP has been sent to your mobile number"
-            : "Failed to send OTP. Please try again.",
-          type: "text",
-        },
-      ]);
-    } catch (error) {
-      console.error("Error:", error);
-      setMessages((prevMessages) => [
-        ...prevMessages.filter((msg) => !msg.isLoading),
-        {
-          sender: "bot",
-          text: "Sorry, we encountered an error. Please try again.",
-          type: "text",
-        },
-      ]);
-    } finally {
-      setBotResponseLoading(false);
-    }
-  };
 
   const verifyOTP = async (otp) => {
     setMessages((prevMessages) => [
@@ -1515,7 +1539,7 @@ const NnnowChatBot = () => {
         setSelectedOrder,
         handleStateTransition,
         styles,
-        currentState,
+        currentState,setBotResponseLoading,
         { NextHandler: "message_switching_from_COD_to_prepaid" }
       );
     } else if (currentState === "order_issues" && token) {
@@ -1527,7 +1551,7 @@ const NnnowChatBot = () => {
         setSelectedOrder,
         handleStateTransition,
         styles,
-        currentState,
+        currentState,setBotResponseLoading,
         { NextHandler: "show_item_details" }
       );
     } else if (currentState === "show_item_details") {
@@ -2293,6 +2317,8 @@ const NnnowChatBot = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
+    setBotResponseLoading(true);
+
     if (!userInput.trim()) return;
 
     const currentConfig = FLOW_CONFIG.main_flow[currentState];
@@ -2303,9 +2329,12 @@ const NnnowChatBot = () => {
     ) {
       const input = userInput;
       setUserInput("");
+
       const isUserValid = await verifyPhoneNumber(input);
       if (isUserValid) {
         if (currentState === "login_with_password") {
+    setBotResponseLoading(false);
+
           setMessages((prev) => [
             ...prev.filter((msg) => !msg.isLoading),
             { sender: "bot", text: "Please enter your password", type: "text" },
@@ -2313,6 +2342,8 @@ const NnnowChatBot = () => {
           setCurrentState("enter_password");
         } else {
           await requestOTP();
+    setBotResponseLoading(false);
+
           setMessages((prev) => [
             ...prev.filter((msg) => !msg.isLoading),
             {
@@ -2325,6 +2356,8 @@ const NnnowChatBot = () => {
         }
       }
     } else if (currentState === "enter_password") {
+      setBotResponseLoading(true);
+
       const password = userInput;
       setUserInput("");
       await handlePasswordLogin(password);
@@ -2392,11 +2425,16 @@ const NnnowChatBot = () => {
     } else if (
       currentState === "if_return_not_out_for_pickup_change_my_mobile_number"
     ) {
+  setBotResponseLoading(true);
+
       changeMyPhoneNumber(userInput)
         .then(async (response) => {
+
           const data = JSON.parse(response); // Parse the text response if needed
           console.log("data21312321", data);
           if (data.meta && data.meta.success) {
+  setBotResponseLoading(false);
+
             setMessages((prev) => [
               ...prev,
               {
@@ -2411,6 +2449,8 @@ const NnnowChatBot = () => {
               },
             ]);
           } else {
+  setBotResponseLoading(false);
+
             setMessages((prev) => [
               ...prev,
               {
@@ -2562,11 +2602,23 @@ const NnnowChatBot = () => {
     }
   };
 
+
+  const BotImage = ()=>(
+    
+      <img
+        src="/image.png"
+        alt="Bot"
+        style={{ height: 50, borderRadius: "50%" }}
+      />
+  
+  )
+
   const [concernType, setConcernType] = useState("with_picture");
   // console.log("selectedOrder", selectedOrder);
   const renderMessage = (message, index) => {
     const isBot = message.sender === "bot";
     const isUser = message.sender === "user";
+  
     return (
       (isBot || isUser) && (
         <div
@@ -2578,13 +2630,8 @@ const NnnowChatBot = () => {
             gap: "10px",
           }}
         >
-          {isBot && (
-            <img
-              src="/image.png"
-              alt="Bot"
-              style={{ height: 50, borderRadius: "50%" }}
-            />
-          )}
+          {isBot && <BotImage />}
+  
           <div
             style={{
               maxWidth: "70%",
@@ -2604,6 +2651,7 @@ const NnnowChatBot = () => {
                 NORO
               </span>
             )}
+  
             {message.image ? (
               <img
                 src={message.image}
@@ -2614,11 +2662,7 @@ const NnnowChatBot = () => {
                   borderRadius: "10px",
                 }}
               />
-            ) : // ) : message.isLoading ? (
-            //   <div style={{ ...styles.botMessage }}>
-            //     <LoadingIndicator styles={styles} />
-            //   </div>
-            Array.isArray(message.text) ? (
+            ) : Array.isArray(message.text) ? (
               message.text.map((text, i) => (
                 <div
                   key={`${index}-${i}`}
@@ -2640,28 +2684,53 @@ const NnnowChatBot = () => {
             ) : (
               <div
                 style={{
-                  ...styles.message,
-                  ...(message?.showAs === "object"
-                    ? { padding: 3, borderRadius: "20px" }
-                    : { padding: 13 }),
-                  ...(message?.type === "input" ? { cursor: "pointer" } : {}),
-                  ...(isBot ? styles.botMessage : styles.userMessage),
+                  display: "flex",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: isBot ? "flex-start" : "flex-end",
                 }}
-                onClick={() =>
-                  message?.type === "input"
-                    ? selectInputOption(message.text)
-                    : null
-                }
               >
-                {message.text}
+                {botResponseLoading && isUser && index + 1 === messages.length && (
+                  <div
+                    style={{
+                      background: "red",
+                      width: "20px",
+                      marginRight: "10px",
+                    }}
+                  >
+                    <Loader />
+                  </div>
+                )}
+                <div
+                  style={{
+                    ...styles.message,
+                    ...(message?.showAs === "object"
+                      ? { padding: 3, borderRadius: "20px" }
+                      : { padding: 13 }),
+                    ...(message?.type === "input" ? { cursor: "pointer" } : {}),
+                    ...(isBot ? styles.botMessage : styles.userMessage),
+                  }}
+                  onClick={() =>
+                    message?.type === "input"
+                      ? selectInputOption(message.text)
+                      : null
+                  }
+                >
+                  {message.text}
+                </div>
               </div>
             )}
+  {/* working on loader */}
+            {/* {!botResponseLoading &&
+              `${index + 1}, ${messages.length}, ${botResponseLoading}, ${isUser}`}
+            {botResponseLoading && isUser && index + 1 === messages.length
+              ? null
+              : "--"} */}
           </div>
         </div>
       )
     );
   };
-
   const styles = {
     mainContainer: {
       position: "fixed",
@@ -2673,7 +2742,7 @@ const NnnowChatBot = () => {
       position: "fixed",
       bottom: isOpen ? "90px" : "-1000px",
       right: "20px",
-      width:"90%",
+      width:"80%",
       height:"80%",
       // minWidth: "300px",
       // minHeight: "500px",
@@ -2986,11 +3055,11 @@ const FetchAllOrderDetails = async (
   setSelectedOrder,
   handleStateTransition,
   styles,
-  currentState,
+  currentState,setBotResponseLoading,
   { NextHandler }
 ) => {
   try {
-    setIsOrderLoading(true);
+    setBotResponseLoading(true);
     const myHeaders = new Headers({
       accept: "application/json",
       "accept-language": "en-GB,en-US;q=0.9,en;q=0.8",
@@ -3027,7 +3096,7 @@ const FetchAllOrderDetails = async (
     console.log("rresultesult", result);
     if (result.status) {
       setOrderDetails(result.data?.ordersList);
-      setIsOrderLoading(false);
+      setBotResponseLoading(false);
 
       if (result.data?.ordersList && result.data?.ordersList.length > 0) {
         const ordersToShow = result.data.ordersList.slice(0, 4); // Get the first 2 orders
@@ -3231,7 +3300,7 @@ const FetchAllOrderDetails = async (
     return result;
   } catch (error) {
     console.error("FetchOrders Error:", error);
-    setIsOrderLoading(false);
+    setBotResponseLoading(false);
     return null;
   }
 };
@@ -3773,3 +3842,14 @@ const changeMyPhoneNumber = async (phoneNumber) => {
   }
 };
 export default NnnowChatBot;
+
+
+
+const Loader = () => {
+  return(
+  <div style={{width:52}}>
+
+    <svg  viewBox="0 0 200 200"><circle fill="#E60065" stroke="#E60065" stroke-width="12" r="15" cx="40" cy="65"><animate attributeName="cy" calcMode="spline" dur="2" values="65;135;65;" keySplines=".5 0 .5 1;.5 0 .5 1" repeatCount="indefinite" begin="-.4"></animate></circle><circle fill="#E60065" stroke="#E60065" stroke-width="12" r="15" cx="100" cy="65"><animate attributeName="cy" calcMode="spline" dur="2" values="65;135;65;" keySplines=".5 0 .5 1;.5 0 .5 1" repeatCount="indefinite" begin="-.2"></animate></circle><circle fill="#E60065" stroke="#E60065" stroke-width="12" r="15" cx="160" cy="65"><animate attributeName="cy" calcMode="spline" dur="2" values="65;135;65;" keySplines=".5 0 .5 1;.5 0 .5 1" repeatCount="indefinite" begin="0"></animate></circle></svg>
+  </div>
+  )
+}
