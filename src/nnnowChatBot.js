@@ -2657,12 +2657,12 @@ const requestOTP = async () => {
             gap: "10px",
           }}
         >
-          {isBot && !Array.isArray(message.text) ? <BotImage /> : isBot &&<div style={{background:"red",width:"50px", height:"10px"}}></div>} 
+          {isBot && !Array.isArray(message.text) ? <BotImage /> : isBot &&<div style={{width:"40px", height:"10px"}}></div>} 
           
   
           <div
             style={{
-              width: "70%",
+              width: "75%",
               display: "flex",
               flexDirection: "column",
               // background:"red",
@@ -2783,8 +2783,8 @@ const requestOTP = async () => {
     container: {
       position: "fixed",
       bottom: isOpen ? "90px" : "-1000px",
-      right: "20px",
-      width:"80%",
+      right: "10px",
+      width:"95%",
       height:"80%",
       // minWidth: "300px",
       // minHeight: "500px",
@@ -2821,7 +2821,7 @@ const requestOTP = async () => {
       borderRadius: "25px",
       marginBottom: 2,
       // maxWidth: "70%",
-      fontSize: 14,
+      fontSize: 12,
       position: "relative",
       // border: "1px solid #ff0080",
     },
@@ -2837,8 +2837,8 @@ const requestOTP = async () => {
     arrayBotMessage: {
       // backgroundColor: "#f4f5f6",
       color: "#b94286",
-      maxWidth:"90%",
-      minWidth:"90%",
+      maxWidth:"70%",
+      minWidth:"70%",
       textAlign:"center",
       // alignSelf: "flex-start",
       transition: "all 0.7s ease-in-out",
