@@ -312,13 +312,15 @@ const NnnowChatBot = () => {
       without_picture: {},
 
       // ----------------------------------------------------------------
+      
       login: {
         message:
-          "Welcome to NNNOW Chat! For a better experience, we request you to please login and relaunch chat.",
+          "Hi there! 👋 Welcome to NNNOW Chat Support. I am there to assist you with orders, tracking, returns, and more. Let us know how we can help!",
         options: [
           { text: "Login with Password", next: "login_with_password" },
           { text: "Login with OTP", next: "login_with_otp" },
         ],
+        isInline: true,
       },
       login_with_password: {
         message: "Enter your phone number",
@@ -449,7 +451,7 @@ const NnnowChatBot = () => {
       },
       delayedOrderBeyond24Hours: {
         message:
-          "If your order is delayed beyond 24 hours of the estimated delivery day. please raise a ticket. and we' will raise the issue with our delivery partner to arrange for an early delivery.",
+          "If your order is delayed beyond 24 hours of the estimated delivery day. please raise a ticket. and we will raise the issue with our delivery partner to arrange for an early delivery.",
         options: [
           {
             text: "Raise a ticket",
@@ -1741,8 +1743,10 @@ const requestOTP = async () => {
     //     }
       // });
     } else if (currentState === "reason_for_return") {
+      setBotResponseLoading(true)
       ReasonReturnList(token, selectedOrder?.orderId, selectedItem).then(
-        (data) =>
+        (data) =>{
+          setBotResponseLoading(false)
           setMessages((prev) => [
             ...prev,
             {
@@ -1776,6 +1780,7 @@ const requestOTP = async () => {
               ),
             },
           ])
+        }
       );
     } else if (
       currentState === "raise_a_ticket_money_deducted_order_not_confirmed" ||
@@ -2029,7 +2034,15 @@ const requestOTP = async () => {
         },
       ]);
     } else if (currentState === "request_a_callback") {
-      RequestCall(setMessages, userDetails, mobileNumber);
+      RequestCall(setMessages, userDetails, mobileNumber).then((data) => {
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "bot",
+            text: "Request for a callback has been initiated. An agent will call you shortly.",
+          },
+        ]);
+      })
     } else if (currentState === "ticket_status") {
       fetchKaptureList(
         handleStateTransition,
@@ -2624,11 +2637,13 @@ const requestOTP = async () => {
   )
 
   const [concernType, setConcernType] = useState("with_picture");
+
+  console.log("message1234",messages)
   // console.log("selectedOrder", selectedOrder);
   const renderMessage = (message, index) => {
     const isBot = message.sender === "bot";
     const isUser = message.sender === "user";
-  
+  console.log(   "message?.isInline",message)
     return (
       (isBot || isUser) && (
         <>
@@ -2642,17 +2657,20 @@ const requestOTP = async () => {
             gap: "10px",
           }}
         >
-          {isBot && <BotImage />}
+          {isBot && !Array.isArray(message.text) ? <BotImage /> : isBot &&<div style={{background:"red",width:"50px", height:"10px"}}></div>} 
+          
   
           <div
             style={{
-              maxWidth: "70%",
+              width: "70%",
               display: "flex",
               flexDirection: "column",
-              alignItems: isBot ? "flex-start" : "flex-end",
+              // background:"red",
+              // alignItems:"center"
+              alignItems:Array.isArray(message.text) ? "center": isBot ? "flex-start" : "flex-end",
             }}
           >
-            {isBot && (
+            {isBot && !Array.isArray(message.text) && (
               <span
                 style={{
                   color: "#ff0080",
@@ -2684,13 +2702,16 @@ const requestOTP = async () => {
                       ? { padding: 3, borderRadius: "20px" }
                       : { padding: 13 }),
                     ...(message?.type === "input" ? { cursor: "pointer" } : {}),
-                    ...(isBot ? styles.botMessage : styles.userMessage),
+                    ...(isBot ? styles.arrayBotMessage : styles.userMessage),
                   }}
                   onClick={() =>
                     message?.type === "input" ? selectInputOption(text) : null
                   }
                 >
-                  {text}
+                  {/* {text} */}
+               
+              {text}
+                 
                 </div>
               ))
             ) : (
@@ -2728,16 +2749,13 @@ const requestOTP = async () => {
                       : null
                   }
                 >
-                  {message.text}
+                  {message?.showAs === "object" ? <div style={{display:"flex", justifyContent:"center",TextAlign:"center", color:"red"}}>{"=>"}{message.text}</div>:message.text}
+
+                {/* <div >  {message.text}</div> */}
                 </div>
               </div>
             )}
-  {/* working on loader */}
-            {/* {!botResponseLoading &&
-              `${index + 1}, ${messages.length}, ${botResponseLoading}, ${isUser}`}
-            {botResponseLoading && isUser && index + 1 === messages.length
-              ? null
-              : "--"} */}
+
           </div>
         </div>
         {botResponseLoading && isUser && index + 1 === messages.length && (
@@ -2816,6 +2834,27 @@ const requestOTP = async () => {
       // maxWidth: "75%",
       // width: "90%",
     },
+    arrayBotMessage: {
+      // backgroundColor: "#f4f5f6",
+      color: "#b94286",
+      maxWidth:"90%",
+      minWidth:"90%",
+      textAlign:"center",
+      // alignSelf: "flex-start",
+      transition: "all 0.7s ease-in-out",
+      border: "2px solid #ff017f",
+
+      // maxWidth: "75%",
+      // width: "90%",
+      ":hover": {
+    backgroundColor: "#ffebf5", // Light pink background on hover
+    color: "#ff017f",            // More vivid text color
+    transform: "scale(1.05)",    // Slight zoom effect
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)", // Soft shadow for depth
+    cursor: "pointer"
+  }
+    },
+  
     userMessage: {
       transition: "all 0.4s ease-in-out",
       backgroundColor: "#ff0076",
@@ -3406,7 +3445,7 @@ const RequestCall = async (setMessages, userDetails, mobileNumber) => {
   try {
     // Validate required parameters first
     if (!userDetails?.firstName || !mobileNumber) {
-      throw new Error("Missing required parameters: username or phone number");
+      // throw new Error("Missing required parameters: username or phone number");
     }
 
     // Construct URL with proper encoding
@@ -3429,9 +3468,9 @@ const RequestCall = async (setMessages, userDetails, mobileNumber) => {
     // Check response status
     if (!fetchResponse.ok) {
       const errorText = await fetchResponse.text();
-      throw new Error(
-        `HTTP error! status: ${fetchResponse?.status} - ${errorText}`
-      );
+      // throw new Error(
+      //   `HTTP error! status: ${fetchResponse?.status} - ${errorText}`
+      // );
     }
 
     // Parse JSON response
@@ -3443,6 +3482,7 @@ const RequestCall = async (setMessages, userDetails, mobileNumber) => {
         text: "Request for a callback has been initiated. An agent will call you shortly.",
       },
     ]);
+    return data
   } catch (err) {
     // Ensure err is an Error object and provide fallback
     const errorMessage =
@@ -3707,7 +3747,7 @@ const ReasonReturnList = async (token, orderId, itemId) => {
     return data;
   } catch (error) {
     console.error("Error in ReasonReturnList:", error);
-    throw error;
+    // throw error;
   }
 };
 
@@ -3766,7 +3806,7 @@ const ReasonReturnSend = async (
     return result;
   } catch (error) {
     console.error("Error in ReasonReturnSend:", error);
-    throw error; // Re-throw the error to be handled by the caller if needed
+    // throw error; // Re-throw the error to be handled by the caller if needed
   }
 };
 
@@ -3821,7 +3861,7 @@ const getPinCodeByLatLng = async (latitude, longitude) => {
     );
 
     if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response?.status}`);
+      // throw new Error(`HTTP error! Status: ${response?.status}`);
     }
 
     const result = await response.json();
@@ -3865,7 +3905,7 @@ const changeMyPhoneNumber = async (phoneNumber) => {
     return result;
   } catch (error) {
     console.error("Error updating phone number:", error);
-    throw error; // Re-throw the error so it can be handled by the caller
+    // throw error; // Re-throw the error so it can be handled by the caller
   }
 };
 export default NnnowChatBot;
