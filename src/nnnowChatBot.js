@@ -84,6 +84,9 @@ const NnnowChatBot = () => {
 
   const brandNameRef = useRef();
 
+  // Validated mobile number
+  console.log("Valiadated credantials=> ","7409329671", "12345678")
+
   useEffect(() => {
     if (brandName) {
       brandNameRef.current = brandName;
@@ -1200,7 +1203,7 @@ const NnnowChatBot = () => {
       setMessages((prev) => [
         ...prev,
         {
-          sender: "user",
+          sender: "other_user",
           text: (
             <div
               style={{
@@ -1230,6 +1233,7 @@ const NnnowChatBot = () => {
       ]);
       setCurrentState("push_the_raised_ticket_to_backend");
     }
+    setImageUploadUrl(false)
   }, [imageUploadUrl]);
 
   const handleStateTransition = (nextState) => {
@@ -1578,6 +1582,9 @@ const requestOTP = async () => {
               id: item.itemId,
               image: item?.product?.image,
               brand: item?.product?.brand,
+              description: item?.product?.description,
+              color: item?.product?.color,
+              size: item?.product?.size,
               addressId: data.data?.consignments[0]?.addressDetails?.addressId,
               price: `₹${item?.product?.mrp}`,
             }));
@@ -1585,15 +1592,15 @@ const requestOTP = async () => {
               ...prev,
               { sender: "bot", text: "Select a product:" },
               {
-                sender: "bot",
-                text: itemsToShow.map((order) => (
+                sender: "full",
+                text: itemsToShow.map((itemOrder) => (
                   <div
-                    key={order.id}
+                    key={itemOrder.id}
                     style={styles.orderCard}
                     onClick={() => {
-                      setSelectedItemDetails(order);
+                      setSelectedItemDetails(itemOrder);
 
-                      setSelectedItem(order.id);
+                      setSelectedItem(itemOrder.id);
                       setMessages((prev) => [
                         ...prev,
                         {
@@ -1601,25 +1608,23 @@ const requestOTP = async () => {
                           showAs: "object",
                           text: (
                             <div style={styles.orderCard}>
-                              {/* Order Image */}
+                              {/* itemOrder Image */}
                               <img
-                                src={order?.image}
-                                alt="Order"
-                                style={styles.orderImage}
-                              />
+    src={itemOrder?.image}
+    alt={itemOrder?.brand || "Product"}
+    style={styles.itemOrderImage}
+  />
 
-                              {/* Order Details */}
-                              <div style={styles.orderDetails}>
-                                <span style={styles.orderAmount}>
-                                  {order?.itemStatus?.statusToCustomer}
-                                </span>
-                                <span style={styles.orderAmount}>
-                                  {order?.price}
-                                </span>
-                                <span style={styles.orderId}>
-                                  ID: {order?.id}
-                                </span>
-                              </div>
+  <div style={styles.itemOrderDetails}>
+    <span style={styles.itemOrderId}>ItemId: {itemOrder?.id}</span>
+    <span style={styles.itemOrderBrand}>{itemOrder?.brand}</span>
+    <span style={styles.itemOrderDescription}>{itemOrder?.description}</span>
+    <div style={{ display: 'flex', gap: '12px', color: '#777' }}>
+      <span style={styles.itemOrderColor}>Color: {itemOrder?.color}</span>
+      <span style={styles.itemOrderSize}>Size: {itemOrder?.size}</span>
+    </div>
+    <span style={styles.itemOrderPrice}>{itemOrder?.price}</span>
+  </div>
                             </div>
                           ),
                         },
@@ -1628,16 +1633,21 @@ const requestOTP = async () => {
                     }}
                   >
                     <img
-                      src={order?.image}
-                      alt="Order"
-                      style={styles.orderImage}
-                    />
+    src={itemOrder?.image}
+    alt={itemOrder?.brand || "Product"}
+    style={styles.itemOrderImage}
+  />
 
-                    {/* Order Details */}
-                    <div style={styles.orderDetails}>
-                      <span style={styles.orderAmount}>{order?.price}</span>
-                      <span style={styles.orderId}>ID: {order?.id}</span>
-                    </div>
+  <div style={styles.itemOrderDetails}>
+    <span style={styles.itemOrderId}>ItemId: {itemOrder?.id}</span>
+    <span style={styles.itemOrderBrand}>{itemOrder?.brand}</span>
+    <span style={styles.itemOrderDescription}>{itemOrder?.description}</span>
+    <div style={{ display: 'flex', gap: '12px', color: '#777' }}>
+      <span style={styles.itemOrderColor}>Color: {itemOrder?.color}</span>
+      <span style={styles.itemOrderSize}>Size: {itemOrder?.size}</span>
+    </div>
+    <span style={styles.itemOrderPrice}>{itemOrder?.price}</span>
+  </div>
                   </div>
                 )),
                 type: "input",
@@ -1823,7 +1833,7 @@ const requestOTP = async () => {
           type: "imageUpload",
         },
         {
-          sender: "bot",
+          sender: "other_bot",
           text: (
             <div
               style={{
@@ -2643,9 +2653,12 @@ const requestOTP = async () => {
   const renderMessage = (message, index) => {
     const isBot = message.sender === "bot";
     const isUser = message.sender === "user";
+    const full = message.sender === "full";
+    const other_user = message.sender === "other_user";
+    const other_bot = message.sender === "other_bot";
     console.log("message?.isInline",message)
     return (
-      (isBot || isUser) && (
+      (isBot || isUser || full || other_user || other_bot) && (
         <>
         
         <div
@@ -2654,20 +2667,20 @@ const requestOTP = async () => {
             display: "flex",
             alignItems: "flex-end",
             flexDirection: isBot ? "row" : "row-reverse",
-            gap: "10px",
+            gap: "2px",
           }}
         >
-          {isBot && !Array.isArray(message.text) ? <BotImage /> : isBot &&<div style={{width:"40px", height:"10px"}}></div>} 
+          {isBot && !Array.isArray(message.text) ? <BotImage /> : (isBot || full || other_bot) &&<div style={{width:"40px", height:"10px"}}></div>} 
           
   
           <div
             style={{
-              width: "75%",
+              width: full? "100%" :"75%",
               display: "flex",
               flexDirection: "column",
               // background:"red",
               // alignItems:"center"
-              alignItems:Array.isArray(message.text) ? "center": isBot ? "flex-start" : "flex-end",
+              alignItems:Array.isArray(message.text) ? "center": (isBot||other_bot) ? "flex-start" : "flex-end",
             }}
           >
             {isBot && !Array.isArray(message.text) && (
@@ -2700,9 +2713,12 @@ const requestOTP = async () => {
                     ...styles.message,
                     ...(message?.showAs === "object"
                       ? { padding: 3, borderRadius: "20px" }
+                      : other_bot
+                      ? {}
                       : { padding: 13 }),
                     ...(message?.type === "input" ? { cursor: "pointer" } : {}),
-                    ...(isBot ? styles.arrayBotMessage : styles.userMessage),
+                    ...(isBot ? styles.arrayBotMessage : full ? styles.fullWidth : isUser ? styles.userMessage : {}),
+                    ...(full ? {} :"")
                   }}
                   onClick={() =>
                     message?.type === "input" ? selectInputOption(text) : null
@@ -2741,7 +2757,7 @@ const requestOTP = async () => {
                       ? { padding: 3, borderRadius: "20px" }
                       : { padding: 13 }),
                     ...(message?.type === "input" ? { cursor: "pointer" } : {}),
-                    ...(isBot ? styles.botMessage : styles.userMessage),
+                    ...(isBot ? styles.botMessage : isUser ? styles.userMessage : {}),
                   }}
                   onClick={() =>
                     message?.type === "input"
@@ -2749,7 +2765,7 @@ const requestOTP = async () => {
                       : null
                   }
                 >
-                  {message?.showAs === "object" ? <div style={{display:"flex", justifyContent:"center",TextAlign:"center", color:"red"}}>{"=>"}{message.text}</div>:message.text}
+                  {message?.showAs === "object" ? <div style={{display:"flex", justifyContent:"center",TextAlign:"center", color:"red"}}>{message.text}</div>:message.text}
 
                 {/* <div >  {message.text}</div> */}
                 </div>
@@ -2834,9 +2850,15 @@ const requestOTP = async () => {
       // maxWidth: "75%",
       // width: "90%",
     },
+
+    fullWidth:{
+      width:"100%",
+      background:"#ff017f20"
+    },
+
     arrayBotMessage: {
       // backgroundColor: "#f4f5f6",
-      color: "#b94286",
+      color: "#762f88",
       maxWidth:"70%",
       minWidth:"70%",
       textAlign:"center",
@@ -2853,6 +2875,9 @@ const requestOTP = async () => {
     boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)", // Soft shadow for depth
     cursor: "pointer"
   }
+  
+
+
     },
   
     userMessage: {
@@ -2946,6 +2971,7 @@ const requestOTP = async () => {
       padding: 10,
       border: "1px solid #e5e7eb",
       transition: "transform 0.2s ease-in-out",
+      whiteSpace:"pre"
     },
     orderImage: {
       // width: "48px",
@@ -2980,6 +3006,26 @@ const requestOTP = async () => {
       fontSize: "0.75rem",
       border: "none",
     },
+
+    // item Orders
+    itemOrderImage: {
+      width: '100px',
+      height: '100px',
+      objectFit: 'cover',
+      borderRadius: '8px',
+      marginRight: '15px',
+    },
+    itemOrderDetails: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '6px',
+    },
+    itemOrderId: { fontWeight: 'bold', color: '#e91e63' }, // pinkish tone
+    itemOrderBrand: { color: '#e91e63', fontWeight: 'bold', fontSize: '18px' },
+    itemOrderPrice: { color: '#e91e63', fontWeight: 'bold', fontSize: '16px' },
+    itemOrderColor: { color: '#777' },
+    itemOrderSize: { color: '#777' },
+    itemOrderDescription: { color: '#333' },
   };
 
   const toggleChatbot = () => setIsOpen(!isOpen);
@@ -3177,7 +3223,7 @@ const FetchAllOrderDetails = async (
           ...prev,
           { sender: "bot", text: "Here are your orders:" },
           {
-            sender: "bot",
+            sender: "full",
             text: ordersToShow.map((order) => (
               <div
                 key={order.orderId}
