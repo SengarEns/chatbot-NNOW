@@ -82,6 +82,7 @@ const NnnowChatBot = () => {
   const [pincode, setPincode] = useState("");
   const [brandName, setBrandName] = useState("Arrow");
 
+  // const {email, password} = params()
   const brandNameRef = useRef();
 
   // Validated mobile number
