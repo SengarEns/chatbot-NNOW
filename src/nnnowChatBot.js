@@ -2636,12 +2636,12 @@ const requestOTP = async () => {
   };
 
 
-  const BotImage = ()=>(
+  const BotImage = ({styles})=>(
     
       <img
         src="/image.png"
         alt="Bot"
-        style={{ height: 50, borderRadius: "50%" }}
+        style={{ height: 50, borderRadius: "50%", ...styles }}
       />
   
   )
@@ -2664,7 +2664,7 @@ const requestOTP = async () => {
         <div
           key={index}
           style={{
-            display: "flex",
+            display: full ?"":"flex",
             alignItems: "flex-end",
             flexDirection: isBot ? "row" : "row-reverse",
             gap: "2px",
@@ -2718,7 +2718,7 @@ const requestOTP = async () => {
                       : { padding: 13 }),
                     ...(message?.type === "input" ? { cursor: "pointer" } : {}),
                     ...(isBot ? styles.arrayBotMessage : full ? styles.fullWidth : isUser ? styles.userMessage : {}),
-                    ...(full ? {} :"")
+                    // ...(full ? {} :"")
                   }}
                   onClick={() =>
                     message?.type === "input" ? selectInputOption(text) : null
@@ -2817,7 +2817,9 @@ const requestOTP = async () => {
     header: {
       background: "linear-gradient(135deg, #9f009f 0%, #ff0080 100%)",
       color: "#fff",
-      padding: "15px",
+      padding: "3px 15px",
+      // paddingVertical: "15px",
+      // paddingHorizontal: "15px",
       fontSize: "18px",
       fontWeight: "bold",
       display: "flex",
@@ -3049,7 +3051,10 @@ const requestOTP = async () => {
       )}
       <div style={styles.container}>
         <div style={styles.header}>
-          <div>
+          <div style={{display:"flex", gap:5, alignItems:"center"}}>
+       <div style={{ filter: "brightness(0) invert(1)" }}>
+        <BotImage/>
+          </div>
             <span>Chat with us</span>
           </div>
           <span style={styles.closeButton} onClick={toggleChatbot}>
@@ -3072,7 +3077,8 @@ const requestOTP = async () => {
               justifyContent: "center",
             }}
           >
-            <PaperClip />
+            {/* <PaperClip /> */}
+            <img src="/Link.svg" />
           </div>
           <div style={styles.InputButton}>
             <input
@@ -3094,7 +3100,10 @@ const requestOTP = async () => {
         </form>
       </div>
       <button style={styles.toggleButton} onClick={toggleChatbot} type="Submit">
-        <AiOutlineMessage />
+        {/* <AiOutlineMessage /> */}
+        <div style={{ filter: "brightness(0) invert(1)" }}>
+        <BotImage styles={{height:35, marginTop:4}}/>
+          </div>
       </button>
     </div>
   );
@@ -3276,7 +3285,7 @@ const FetchAllOrderDetails = async (
                           >
                             <span
                               style={{
-                                fontSize: "12px",
+                                // fontSize: "12px",
                                 fontWeight: "600",
                                 color: "#374151",
                                 display: "flex",
@@ -3328,67 +3337,65 @@ const FetchAllOrderDetails = async (
                   handleStateTransition(NextHandler);
                 }}
               >
-                <img
-                  src={order?.imagesList?.[0]}
-                  alt="Order"
-                  style={{
-                    width: "90px",
-                    height: "90px",
-                    objectFit: "cover",
-                    borderRadius: "12px",
-                    border: "2px solid #E5E7EB",
-                  }}
-                />
-                {/* Order Details */}
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "6px",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: "12px",
-                      fontWeight: "600",
-                      color: "#374151",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                  >
-                    Status:
-                    <span
-                      style={{
-                        color:
-                          order?.orderStatus === "Delivered"
-                            ? "#10B981"
-                            : order?.orderStatus === "Pending"
-                            ? "#F59E0B"
-                            : "#EF4444",
-                        fontWeight: "700",
-                      }}
-                    >
-                      {order?.orderStatus}
-                    </span>
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "20px",
-                      fontWeight: "700",
-                      color: "#111827",
-                      letterSpacing: "0.5px",
-                    }}
-                  >
-                    ₹{order?.totalAmount}
-                  </span>
-                  <span style={{ fontSize: "12px", color: "#6B7280" }}>
-                    📅 Date: {order?.orderDate}
-                  </span>
-                  <span style={{ fontSize: "12px", color: "#6B7280" }}>
-                    🆔 ID: {order?.orderId}
-                  </span>
-                </div>
+               {/* Product Image */}
+  <img
+    src={order?.imagesList?.[0]}
+    alt="Product"
+    style={{
+      width: "100px",
+      height: "120px",
+      objectFit: "cover",
+      borderRadius: "8px",
+    }}
+  />
+
+  {/* Product Info */}
+  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+    <span
+      style={{
+        // fontSize: "12px",
+        color: "#EC4899", // pink
+        fontWeight: "500",
+      }}
+    >
+      ItemId: {order?.orderId}
+    </span>
+
+    <span
+      style={{
+        // fontSize: "18px",
+        fontWeight: "700",
+        color: "#DC2626", // bold red like "Arrow" text
+      }}
+    >
+      {order?.brand || "Arrow"}
+    </span>
+
+    <span
+      style={{
+        // fontSize: "14px",
+        fontWeight: "500",
+        color: "#111827",
+      }}
+    >
+      {order?.productName || "Short Sleeve Dobby Shirt"}
+    </span>
+
+    <div style={{color: "#6B7280", display: "flex", gap: "12px" }}>
+      <span>Color: {order?.color || "Blue"}</span>
+      <span>Size: {order?.size || "39"}</span>
+    </div>
+
+    <span
+      style={{
+        // fontSize: "18px",
+        fontWeight: "700",
+        color: "#E11D48", // price in bright pink/red
+      }}
+    >
+      ₹{order?.totalAmount || "2199"}
+    </span>
+  </div>
               </div>
             )),
             type: "input",
